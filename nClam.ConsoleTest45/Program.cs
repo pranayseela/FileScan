@@ -8,6 +8,7 @@ class Program
     static async Task Main(string[] args)
     {
         var clam = new ClamClient("localhost", 3310);
+        //The current directory is C Drive and a text file in it.
         var scanResult = await clam.ScanFileOnServerAsync("C:\\test.txt");  //any file you would like!
 
         switch (scanResult.Result)
