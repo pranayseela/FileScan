@@ -1,9 +1,10 @@
-version: 4.0.{build}
-image: Visual Studio 2017
+version: 5.0.{build}
+image: Visual Studio 2022
 configuration: Release
 build_script:
+- ps: dotnet --version
 - ps: dotnet build -c Release
 test_script:
-- ps: pushd nClam.Tests; dotnet test; popd
+- ps: pushd nClam.Tests; dotnet test -c Release --verbosity normal; popd
 artifacts:
 - path: nClam\bin\Release\*.nupkg

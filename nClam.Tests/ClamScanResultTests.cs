@@ -28,10 +28,23 @@ namespace nClam.Tests
 
             Assert.Equal(ClamScanResults.VirusDetected, result.Result);
 
-            Assert.Equal(1, result.InfectedFiles.Count);
+            Assert.Single(result.InfectedFiles);
 
             Assert.Equal(@"\\?\C:\test.txt", result.InfectedFiles[0].FileName);
-            Assert.Equal(" Eicar-Test-Signature", result.InfectedFiles[0].VirusName);
+            Assert.Equal("Eicar-Test-Signature", result.InfectedFiles[0].VirusName);
+        }
+
+        [Fact]
+        public void VirusDetected_MultipleFiles()
+        {
+            var result = new ClamScanResult(@"C:\file1.txt: Virus1 FOUND" + Environment.NewLine + @"C:\file2.txt: Virus2 FOUND");
+
+            Assert.Equal(ClamScanResults.VirusDetected, result.Result);
+            Assert.Equal(2, result.InfectedFiles.Count);
+            Assert.Equal(@"C:\file1.txt", result.InfectedFiles[0].FileName);
+            Assert.Equal("Virus1", result.InfectedFiles[0].VirusName);
+            Assert.Equal(@"C:\file2.txt", result.InfectedFiles[1].FileName);
+            Assert.Equal("Virus2", result.InfectedFiles[1].VirusName);
         }
 
         [Fact]
@@ -43,44 +56,9 @@ namespace nClam.Tests
         }
 
         [Fact]
-        public void before_tests()
+        public void Null_RawResult_ThrowsException()
         {
-            Assert.Equal(
-                "test:test1",
-                ClamScanResult.before("test:test1:test2")
-                );
-
-            Assert.Equal(
-                "",
-                ClamScanResult.before("test")
-                );
-
-            Assert.Equal(
-                "test",
-                ClamScanResult.before("test:test1")
-                );
-        }
-
-        [Fact]
-        public void after_tests()
-        {
-            //current released behavior to have initial space
-            //(probably a bug)
-
-            Assert.Equal(
-                " test1",
-                ClamScanResult.after("test test1")
-                );
-
-            Assert.Equal(
-                " test2",
-                ClamScanResult.after("test test1 test2")
-                );
-
-            Assert.Equal(
-                "",
-                ClamScanResult.after("test")
-                );
+            Assert.Throws<ArgumentNullException>(() => new ClamScanResult(null!));
         }
     }
 }

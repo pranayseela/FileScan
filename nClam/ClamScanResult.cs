@@ -9,72 +9,108 @@
         /// <summary>
         /// The raw string returned by the ClamAV server.
         /// </summary>
-        public string RawResult { get; private set; }
+        public string RawResult { get; }
 
         /// <summary>
         /// The parsed results of scan.
         /// </summary>
-        public ClamScanResults Result { get; private set; }
+        public ClamScanResults Result { get; }
 
         /// <summary>
-        /// List of infected files with what viruses they are infected with. Null if the Result is not VirusDetected.
+        /// List of infected files with what viruses they are infected with. Empty collection if the Result is not VirusDetected.
         /// </summary>
-        public ReadOnlyCollection<ClamScanInfectedFile> InfectedFiles { get; private set; }
+        public ReadOnlyCollection<ClamScanInfectedFile> InfectedFiles { get; }
 
         public ClamScanResult(string rawResult)
         {
-            RawResult = rawResult;
+            RawResult = rawResult ?? throw new ArgumentNullException(nameof(rawResult));
 
             var resultLowered = rawResult.ToLowerInvariant();
 
+#if NET45
             if (resultLowered.EndsWith("ok"))
             {
                 Result = ClamScanResults.Clean;
+                InfectedFiles = new ReadOnlyCollection<ClamScanInfectedFile>(new List<ClamScanInfectedFile>());
             }
-            else if(resultLowered.EndsWith("error"))
+            else if (resultLowered.EndsWith("error"))
             {
                 Result = ClamScanResults.Error;
+                InfectedFiles = new ReadOnlyCollection<ClamScanInfectedFile>(new List<ClamScanInfectedFile>());
             }
-            else if (resultLowered.EndsWith("found"))
+            else if (resultLowered.Contains("found"))
+#else
+            if (resultLowered.EndsWith("ok", StringComparison.Ordinal))
+            {
+                Result = ClamScanResults.Clean;
+                InfectedFiles = new ReadOnlyCollection<ClamScanInfectedFile>(new List<ClamScanInfectedFile>());
+            }
+            else if (resultLowered.EndsWith("error", StringComparison.Ordinal))
+            {
+                Result = ClamScanResults.Error;
+                InfectedFiles = new ReadOnlyCollection<ClamScanInfectedFile>(new List<ClamScanInfectedFile>());
+            }
+            else if (resultLowered.Contains("found", StringComparison.Ordinal))
+#endif
             {
                 Result = ClamScanResults.VirusDetected;
+                InfectedFiles = ParseInfectedFiles(rawResult);
+            }
+            else
+            {
+                Result = ClamScanResults.Unknown;
+                InfectedFiles = new ReadOnlyCollection<ClamScanInfectedFile>(new List<ClamScanInfectedFile>());
+            }
+        }
 
-                var files = rawResult.Split(new[] {"FOUND"}, StringSplitOptions.RemoveEmptyEntries);
-                var infectedFiles = new List<ClamScanInfectedFile>();
-                foreach(var file in files)
+        private static ReadOnlyCollection<ClamScanInfectedFile> ParseInfectedFiles(string rawResult)
+        {
+            var infectedFiles = new List<ClamScanInfectedFile>();
+            var lines = rawResult.Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
+            
+            foreach (var line in lines)
+            {
+#if NET45
+                if (!line.EndsWith("found", StringComparison.CurrentCultureIgnoreCase))
                 {
-                    var trimFile = file.Trim();
-                    var splitFile = trimFile.Split();
-                    
-                    infectedFiles.Add(new ClamScanInfectedFile() { FileName = before(trimFile), VirusName = after(trimFile) });
+                    continue;
                 }
 
-                InfectedFiles = new ReadOnlyCollection<ClamScanInfectedFile>(infectedFiles);
+                var foundIndex = line.LastIndexOf(" FOUND", StringComparison.CurrentCultureIgnoreCase);
+#else
+                if (!line.EndsWith("found", StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                var foundIndex = line.LastIndexOf(" FOUND", StringComparison.OrdinalIgnoreCase);
+#endif
+                if (foundIndex <= 0)
+                {
+                    continue;
+                }
+
+                var filePart = line.Substring(0, foundIndex);
+                var colonIndex = filePart.LastIndexOf(':');
+                
+                if (colonIndex < 0)
+                {
+                    continue;
+                }
+
+                var fileName = filePart.Substring(0, colonIndex).Trim();
+                var virusName = filePart.Substring(colonIndex + 1).Trim();
+                
+                infectedFiles.Add(new ClamScanInfectedFile
+                {
+                    FileName = fileName,
+                    VirusName = virusName
+                });
             }
-        }
-        
-        public static string before(string s)
-        {
-            int l = s.LastIndexOf(":");
-            if (l > 0)
-            {
-                return s.Substring(0, l);
-            }
-            return "";
-        }
-        public static string after(string s)
-        {
-            int l = s.LastIndexOf(" ");
-            if (l > 0)
-            {
-                return s.Substring(l);
-            }
-            return "";
+
+            return new ReadOnlyCollection<ClamScanInfectedFile>(infectedFiles);
         }
 
-        public override string ToString()
-        {
-            return RawResult;
-        }
+        public override string ToString() => RawResult;
     }
 }

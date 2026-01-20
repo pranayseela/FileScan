@@ -6,13 +6,13 @@
     public class ClamScanInfectedFile
     {
         /// <summary>
-        /// The file name scaned, as returned by the CalmAV server
+        /// The file name scanned, as returned by the ClamAV server
         /// </summary>
-        public string FileName { get; set; }
+        public string FileName { get; set; } = string.Empty;
 
         /// <summary>
         /// The name of the virus detected by the ClamAV server
         /// </summary>
-        public string VirusName { get; set; }
+        public string VirusName { get; set; } = string.Empty;
     }
 }

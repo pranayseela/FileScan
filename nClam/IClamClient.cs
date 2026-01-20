@@ -27,6 +27,16 @@ namespace nClam
         int Port { get; set; }
 
         /// <summary>
+        /// Connection timeout in milliseconds. Default is 30 seconds (30000ms).
+        /// </summary>
+        int ConnectionTimeout { get; set; }
+
+        /// <summary>
+        /// Read/Write timeout in milliseconds. Default is 5 minutes (300000ms).
+        /// </summary>
+        int ReadWriteTimeout { get; set; }
+
+        /// <summary>
         /// Gets the ClamAV server version
         /// </summary>
         Task<string> GetVersionAsync();
@@ -116,5 +126,53 @@ namespace nClam
         /// <param name="filePath">Path to the file/directory.</param>
         /// <param name="cancellationToken">cancellation token used for request</param>
         Task<ClamScanResult> SendAndScanFileAsync(string filePath, CancellationToken cancellationToken);
+
+        /// <summary>
+        /// Scans a file/directory on the ClamAV Server and continues scanning after first match (CONTSCAN).
+        /// </summary>
+        /// <param name="filePath">Path to the file/directory on the ClamAV server.</param>
+        Task<ClamScanResult> ContinueScanFileOnServerAsync(string filePath);
+
+        /// <summary>
+        /// Scans a file/directory on the ClamAV Server and continues scanning after first match (CONTSCAN).
+        /// </summary>
+        /// <param name="filePath">Path to the file/directory on the ClamAV server.</param>
+        /// <param name="cancellationToken">cancellation token used for request</param>
+        Task<ClamScanResult> ContinueScanFileOnServerAsync(string filePath, CancellationToken cancellationToken);
+
+        /// <summary>
+        /// Scans a file/directory and reports all matches found (ALLMATCHSCAN).
+        /// </summary>
+        /// <param name="filePath">Path to the file/directory on the ClamAV server.</param>
+        Task<ClamScanResult> AllMatchScanFileOnServerAsync(string filePath);
+
+        /// <summary>
+        /// Scans a file/directory and reports all matches found (ALLMATCHSCAN).
+        /// </summary>
+        /// <param name="filePath">Path to the file/directory on the ClamAV server.</param>
+        /// <param name="cancellationToken">cancellation token used for request</param>
+        Task<ClamScanResult> AllMatchScanFileOnServerAsync(string filePath, CancellationToken cancellationToken);
+
+        /// <summary>
+        /// Gets statistics from the ClamAV server.
+        /// </summary>
+        Task<ClamStats> GetStatsAsync();
+
+        /// <summary>
+        /// Gets statistics from the ClamAV server.
+        /// </summary>
+        /// <param name="cancellationToken">cancellation token used for request</param>
+        Task<ClamStats> GetStatsAsync(CancellationToken cancellationToken);
+
+        /// <summary>
+        /// Reloads the virus database on the ClamAV server.
+        /// </summary>
+        Task<bool> ReloadDatabaseAsync();
+
+        /// <summary>
+        /// Reloads the virus database on the ClamAV server.
+        /// </summary>
+        /// <param name="cancellationToken">cancellation token used for request</param>
+        Task<bool> ReloadDatabaseAsync(CancellationToken cancellationToken);
     }
 }
