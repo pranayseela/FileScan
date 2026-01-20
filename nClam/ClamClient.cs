@@ -1,4 +1,4 @@
-﻿namespace nClam
+namespace nClam
 {
     using System;
 #if !NET45
